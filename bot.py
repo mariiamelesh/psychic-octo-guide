@@ -116,6 +116,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_users()
         del context.user_data["current_question"]
 
+        await update.message.reply_text(
+            "Оберіть дію з меню.",
+            reply_markup=menu_markup
+        )
+
     elif text == "Мій рейтинг":
         u = USERS[user_id]
         await update.message.reply_text(
