@@ -4,6 +4,7 @@ import logging
 import random
 import json
 import os
+import time
 
 BOT_TOKEN = "8586623169:AAEv1lbfMRbeVBDh1sQ2FtCiydy7V2TSOa0"
 
@@ -46,8 +47,8 @@ def save_users():
         json.dump(USERS, f, ensure_ascii=False, indent=4)
 
 #функція що надсилає питання в чат користувачеві.
-async def send_question(chat_id, context, question_text, question_data):
-    context.user_data["current_question"] = (question_text, question_data)
+async def send_question(chat_id, context: ContextTypes.DEFAULT_TYPE, question_text, question_data):
+    context.user_data["current_question"] = (question_text, question_data, time.time())
 
     #варіанти відповідей вигляду - (1. а)
     options = "\n".join(
@@ -132,7 +133,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Спочатку оберіть тест.")
             return
 
-        question_text, question_data = context.user_data["current_question"]
+        question_text, question_data, start_time = context.user_data["current_question"]
 
         user_answer = question_data["options"][int(text) - 1]
         correct_answer = question_data["right_option"]
@@ -140,8 +141,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         USERS[user_id]["amount_of_tests"] += 1
 
         if user_answer == correct_answer:
-            USERS[user_id]["right_answers"] += 1
-            await update.message.reply_text("Відповідь правильна.", reply_markup=menu_markup)
+            if time.time() - start_time < 10:
+                USERS[user_id]["right_answers"] += 1
+                await update.message.reply_text("Відповідь правильна.")
+            else:
+                USERS[user_id]["right_answers"] += 0.5
+                await update.message.reply_text("Відповідь правильна. Але невчасно відповіли.")
         else:
             USERS[user_id]["false_tests"][question_text] = question_data
             await update.message.reply_text(
@@ -174,6 +179,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 application = ApplicationBuilder().token(BOT_TOKEN).build()
-application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("start", flash_cards))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 application.run_polling()
