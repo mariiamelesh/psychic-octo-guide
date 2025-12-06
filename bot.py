@@ -6,7 +6,7 @@ import json
 import os
 import time
 
-BOT_TOKEN = "8586623169:AAEv1lbfMRbeVBDh1sQ2FtCiydy7V2TSOa0"
+BOT_TOKEN = "8322218962:AAFdWyQOegckqk5vPqcHTkZMhX6hRih11kQ"
 
 #логуання
 logging.basicConfig(
@@ -80,20 +80,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # флеш-картки
-async def flash_cards(chat_id, context, question, answer, is_question):
-    context.user_data["current_flash"] = (question, answer, is_question)
+async def flash_cards(chat_id, context: ContextTypes.DEFAULT_TYPE, question, answer, is_question):
+    context.user_data["current_flash"] = (question, answer, ~is_question)
 
-    if is_question == True:
+    if is_question == False:
         await context.bot.send_message(
             chat_id=chat_id,
             text=question,
-            reply_markup=flash_keyboard
+            reply_markup=flash_markup
         )
     else:
         await context.bot.send_message(
             chat_id=chat_id,
             text=answer,
-            reply_markup=flash_keyboard
+            reply_markup=flash_markup
         )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -108,20 +108,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "Флеш картки":
         question_text, question_data = random.choice(list(QUESTIONS.items()))
-        await flash_cards(update.effective_chat.id, context, question_text, question_data["options"][question_data["right_option"]], False)
+        await flash_cards(update.effective_chat.id, context, question_text, question_data["right_option"], False)
 
     elif text == "У меню":
         await update.message.reply_text(
             "Оберіть дію з меню.",
             reply_markup=menu_markup
         )
+        del context.user_data["current_flash"]
+
 
     elif text == "Перевернути картку":
         if "current_flash" not in context.user_data:
             await update.message.reply_text("Спочатку візьміть картку хд.")
             return
 
-        question, answear, is_question = context.user_data["flash_question"]
+        question, answear, is_question = context.user_data["current_flash"]
         await flash_cards(update.effective_chat.id, context, question, answear, is_question)
 
     elif text == "Рандомний тест":
@@ -181,6 +183,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 application = ApplicationBuilder().token(BOT_TOKEN).build()
-application.add_handler(CommandHandler("start", flash_cards))
+application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 application.run_polling()
