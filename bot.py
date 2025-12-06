@@ -15,17 +15,21 @@ logging.basicConfig(
 
 #робимо менюшку з кнопок
 menu_keyboard = [
-    ["Почати", "Рандомний тест"],
+    ["Флеш картки", "Рандомний тест"],
     ["Мій рейтинг", "Помилковий тест"]
 ]
 test_keyboard = [
     ["1", "2"],
     ["3", "4"]
 ]
+flash_keyboard = [
+    ["У меню", "Перевернути картку"]
+]
 menu_markup = ReplyKeyboardMarkup(menu_keyboard, resize_keyboard=True)
 test_markup = ReplyKeyboardMarkup(test_keyboard, resize_keyboard=True)
+flash_markup = ReplyKeyboardMarkup(flash_keyboard, resize_keyboard=True)
 
-#беремо наші питання з джейсон-файлу
+#беремо наші питання та флешкартки з джейсон-файлу
 with open("questions.json", "r", encoding="utf-8") as f:
     QUESTIONS = json.load(f)
 
@@ -58,7 +62,7 @@ async def send_question(chat_id, context, question_text, question_data):
 
 
 #старт
-async def flash_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
     if user_id not in USERS:
@@ -74,6 +78,22 @@ async def flash_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=menu_markup
     )
 
+# флеш-картки
+async def flash_cards(chat_id, context, question, answer, is_question):
+    context.user_data["current_flash"] = (question_text, question_data, is_question)
+
+    if is_question == True:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=question,
+            reply_markup=flash_keyboard
+        )
+    else:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=answer,
+            reply_markup=flash_keyboard
+        )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -85,8 +105,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "false_tests": {}
     })
 
-    if text == "Почати":
-        await update.message.reply_text("Оберіть тест.")
+    if text == "Флеш картки":
+        question_text, question_data = random.choice(list(QUESTIONS.items()))
+        await flash_cards(update.effective_chat.id, context, question_text, question_data["options"][question_data["right_option"]], False)
+
+    elif text == "У меню":
+        await update.message.reply_text(
+            "Оберіть дію з меню.",
+            reply_markup=menu_markup
+        )
+
+    elif text == "Перевернути картку":
+        if "current_flash" not in context.user_data:
+            await update.message.reply_text("Спочатку візьміть картку хд.")
+            return
+
+        question, answear, is_question = context.user_data["flash_question"]
+        await flash_cards(update.effective_chat.id, context, question, answear, is_question)
 
     elif text == "Рандомний тест":
         question_text, question_data = random.choice(list(QUESTIONS.items()))
@@ -136,6 +171,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         question_text, question_data = random.choice(list(false_tests.items()))
         await send_question(update.effective_chat.id, context, question_text, question_data)
+
 
     else:
         await update.message.reply_text("Скористайтесь кнопками меню.")
