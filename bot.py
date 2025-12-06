@@ -144,6 +144,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if time.time() - start_time < 10:
                 USERS[user_id]["right_answers"] += 1
                 await update.message.reply_text("Відповідь правильна.")
+                filename = f"reels/reels{random.randint(1,11)}.mp4"
+                await update.message.reply_video(video=open(filename, 'rb'), supports_streaming=True)
             else:
                 USERS[user_id]["right_answers"] += 0.5
                 await update.message.reply_text("Відповідь правильна. Але невчасно відповіли.")
