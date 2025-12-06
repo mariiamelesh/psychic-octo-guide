@@ -18,7 +18,12 @@ menu_keyboard = [
     ["Почати", "Рандомний тест"],
     ["Мій рейтинг", "Помилковий тест"]
 ]
+test_keyboard = [
+    ["1", "2"],
+    ["3", "4"]
+]
 menu_markup = ReplyKeyboardMarkup(menu_keyboard, resize_keyboard=True)
+test_markup = ReplyKeyboardMarkup(test_keyboard, resize_keyboard=True)
 
 #беремо наші питання з джейсон-файлу
 with open("questions.json", "r", encoding="utf-8") as f:
@@ -47,11 +52,13 @@ async def send_question(chat_id, context, question_text, question_data):
 
     await context.bot.send_message(
         chat_id=chat_id,
-        text=f"{question_text}\n{options}" # "питання" /n 1. а /n...
+        text=f"{question_text}\n{options}", # "питання" /n 1. а /n...
+        reply_markup=test_markup
     )
 
+
 #старт
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def flash_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
     if user_id not in USERS:
@@ -129,8 +136,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Скористайтесь кнопками меню.")
 
 
-if __name__ == "main":
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.run_polling()
+application = ApplicationBuilder().token(BOT_TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+application.run_polling()
