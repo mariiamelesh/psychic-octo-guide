@@ -141,20 +141,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if user_answer == correct_answer:
             USERS[user_id]["right_answers"] += 1
-            await update.message.reply_text("Відповідь правильна.")
+            await update.message.reply_text("Відповідь правильна.", reply_markup=menu_markup)
         else:
             USERS[user_id]["false_tests"][question_text] = question_data
             await update.message.reply_text(
-                f"Відповідь неправильна. Правильний варіант: {correct_answer}"
+                f"Відповідь неправильна. Правильний варіант: {correct_answer}",
+                reply_markup=menu_markup
             )
 
         save_users()
         del context.user_data["current_question"]
-
-        await update.message.reply_text(
-            "Оберіть дію з меню.",
-            reply_markup=menu_markup
-        )
 
     elif text == "Мій рейтинг":
         u = USERS[user_id]
