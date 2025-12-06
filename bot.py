@@ -81,7 +81,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # флеш-картки
 async def flash_cards(chat_id, context, question, answer, is_question):
-    context.user_data["current_flash"] = (question_text, question_data, is_question)
+    context.user_data["current_flash"] = (question, answer, is_question)
 
     if is_question == True:
         await context.bot.send_message(
